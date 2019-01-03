@@ -1,6 +1,6 @@
 from libs import plugin, embed, dataloader
 import discord, traceback, datetime, os
-import requests
+import requests, json
 
 CHANNEL = 'channel'
 MESSAGE = 'message'
@@ -51,7 +51,7 @@ For more information, do
                 return # skip run
 
             # create embed description
-            title = "**__CardLife Online Servers__**"
+            title = "CardLife Online Servers (%s)" %len(servers_json["Games"])
             description = ''
             highest_playercount=0
             for item in servers_json['Games']:
@@ -69,7 +69,12 @@ For more information, do
                     playercount = '%s/%s'%(item['CurrentPlayers'], item['MaxPlayers'])
                     spaces = highest_playercount-len(playercount)
                     description+='`'+(spaces*'.')+playercount+'`| '
-                    description+=''+item['WorldName']+''+'\n'
+                    description+=''+item['WorldName']+''
+                    if len(json.loads(item['ModInfo'])['orderedMods'])!=0:
+                        description+=' (**M**)'
+                    if item['HasPassword']: # contradiction; will never happen
+                        description+=' (**P**)'
+                    description+='\n'
 
             # create offline official server list
             offline_servers_str=''

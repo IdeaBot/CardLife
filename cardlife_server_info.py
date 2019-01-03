@@ -59,10 +59,15 @@ Please do not overuse this command - respect the CardLife servers'''
         description+='server**\n'
 
         if is_modded:
-            description+='Mods: `'
+            # description+='Mods: `'
+            field_val3=''
             for mod in server_info['ModInfo']['orderedMods']:
-                description+=mod['name']+', '
-            description=description[:-2]+'`\n'
+                field_val3+=mod['name']
+                if mod['metadata']['author']:
+                    field_val3+=' by '+mod['metadata']['author']
+                field_val3+='\n'
+            field_val3=field_val3
+            # description=description[:-2]+'`\n'
 
         description_end = \
         '''`{CurrentPlayers}/{MaxPlayers}` online @ {Ping}ms
@@ -71,13 +76,40 @@ AntiCheat: {IsAntiCheatEnabled}
 Password: {HasPassword}
 `v{GameVersion}` | ID:`{Id}`'''
 
-        description += description_end.format(server_info["Region"].upper(), **server_info)
+        # description += description_end.format(server_info["Region"].upper(), **server_info)
+
+        server_info["Region"] = server_info["Region"].upper()
+
+        # Connection info
+        field_val1='''Players: `{CurrentPlayers}/{MaxPlayers}`
+Ping: {Ping}ms
+Region: {Region}
+'''
+        field_val1=field_val1.format(**server_info)
+
+        # Security info
+        field_val2='''AntiCheat: {IsAntiCheatEnabled}
+Password: {HasPassword} '''
+        field_val2=field_val2.format(**server_info)
+
+        # Debug info
+        field_val4=\
+        '''ID:`{Id}`
+`v{GameVersion}` '''
+        field_val4=field_val4.format(**server_info)
 
         footer=dict()
         footer['text'] = '(Unofficial) CardLife API'
         footer['icon_url'] = None
 
-        yield from self.send_message(message.channel, embed=embed.create_embed(title='**'+server_info['WorldName']+'**', description=description, footer=footer, colour=0xddae60))
+        em = embed.create_embed(title=''+server_info['WorldName']+'', description=description, footer=footer, colour=0xddae60)
+        em.add_field(name='Server Online', value=field_val1, inline=True)
+        em.add_field(name='Security', value=field_val2, inline=True)
+        if is_modded:
+            em.add_field(name='Mods', value=field_val3, inline=True)
+        em.add_field(name='Debug', value=field_val4, inline=is_modded)
+
+        yield from self.send_message(message.channel, embed=em)
 
     def find_name_or_id(self, name_or_id, servers):
         for server in servers:
