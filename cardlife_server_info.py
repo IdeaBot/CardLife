@@ -16,6 +16,7 @@ Please do not overuse this command - respect the CardLife servers'''
         return re.search(r'(?:cardlife|cl)\s*server\s*info(?:rmation)?(?:\s*for)?\s+\"([^\"]+)\"', message.content, re.I)
 
     def action(self, message):
+        yield from self.send_typing(message.channel)
         try:
             # cardlife REST API queries
             # login to CardLife to get PublicId
