@@ -1,11 +1,15 @@
 from libs import plugin, embed, dataloader
 import discord, traceback, datetime, os
-import requests, json
+import requests, json, os
 
 CHANNEL = 'channel'
 MESSAGE = 'message'
 OFFICIAL_SERVERS = 'official_server_data'
 MESSAGES = 'messagesloc'
+UPTIMES = 'uptime_data'
+DATAPATH = 'datapath'
+MAX_TIMES = 4294967296
+DIVISOR = 2
 
 class Plugin(plugin.OnReadyPlugin):
     '''Displays pretty messages about the bot's status on the Idea Development Server
@@ -17,15 +21,23 @@ For more information, do
 ```@Idea help cardlife_add_server_status``` '''
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.CHANNEL_ID = self.config[CHANNEL]
-        self.MESSAGE_ID = self.config[MESSAGE]
-        self.channel = discord.Object(id=self.CHANNEL_ID)
-        self.message = discord.Object(id=self.MESSAGE_ID)
-        self.message.channel = self.channel
+        # constants
+        self.public_namespace.SEEN_TIMES = 'seen'
+        self.public_namespace.TOTAL_TIMES = 'total'
+        # init data path
+        if not os.path.isdir(self.config[DATAPATH]):
+            os.mkdir(self.config[DATAPATH])
+        # load server uptimes
+        self.public_namespace.uptime_file = dataloader.loadfile_safe(self.config[UPTIMES], load_as='json')
+        if not isinstance(self.public_namespace.uptime_file.content, dict):
+            self.public_namespace.uptime_file.content = dict()
+        self.public_namespace.uptime = self.public_namespace.uptime_file.content
+        # load status messages
         self.public_namespace.messages_file = dataloader.loadfile_safe(self.config[MESSAGES], load_as='json')
         if not isinstance(self.public_namespace.messages_file.content, dict):
             self.public_namespace.messages_file.content = dict()
         self.public_namespace.messages = self.public_namespace.messages_file.content
+        # load official servers
         self.official_servers_data = dataloader.loadfile_safe(self.config[OFFICIAL_SERVERS])
         if not isinstance(self.official_servers_data.content, dict):
             self.official_servers_data.content = dict()
@@ -51,6 +63,7 @@ For more information, do
                 return # skip run
 
             # create embed description
+            self.record_uptime(servers_json["Games"])
             title = "CardLife Online Servers (%s)" %len(servers_json["Games"])
             description = ''
             highest_playercount=0
@@ -94,21 +107,29 @@ For more information, do
             for msg in self.public_namespace.messages:
                 message = discord.Object(id=msg)
                 message.channel = discord.Object(id=self.public_namespace.messages[msg])
-                await self.edit_message(message, embed=em)
+                await self.edit_message(message, new_content=' ', embed=em)
             self.official_servers_data.content=self.official_servers
             self.official_servers_data.save()
         except:
             traceback.print_exc()
             pass
     def shutdown(self):
+        # save data
         self.official_servers_data.content=self.official_servers
         self.official_servers_data.save()
+        self.public_namespace.messages_file.content=self.public_namespace.messages
+        self.public_namespace.messages_file.save()
+        self.public_namespace.uptime_file.content=self.public_namespace.uptime
+        self.public_namespace.uptime_file.save()
 
-
-def get_size(start_path = '.'):
-    total_size = 0
-    for dirpath, dirnames, filenames in os.walk(start_path):
-        for f in filenames:
-            fp = os.path.join(dirpath, f)
-            total_size += os.path.getsize(fp)
-    return total_size
+    def record_uptime(self, servers):
+        for server in servers:
+            if str(server["Id"]) not in self.public_namespace.uptime:
+                self.public_namespace.uptime[str(server["Id"])] = {self.public_namespace.SEEN_TIMES:1, self.public_namespace.TOTAL_TIMES:0}
+            else:
+                self.public_namespace.uptime[str(server["Id"])][self.public_namespace.SEEN_TIMES] += 1
+                if self.public_namespace.uptime[str(server["Id"])][self.public_namespace.TOTAL_TIMES]>MAX_TIMES:
+                    self.public_namespace.uptime[str(server["Id"])][self.public_namespace.SEEN_TIMES] = self.public_namespace.uptime[str(server["Id"])][self.public_namespace.SEEN_TIMES] / DIVISOR
+                    self.public_namespace.uptime[str(server["Id"])][self.public_namespace.TOTAL_TIMES] = self.public_namespace.uptime[str(server["Id"])][self.public_namespace.TOTAL_TIMES] / DIVISOR
+        for server_id in self.public_namespace.uptime:
+            self.public_namespace.uptime[server_id][self.public_namespace.TOTAL_TIMES] += 1

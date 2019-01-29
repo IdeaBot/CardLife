@@ -80,9 +80,15 @@ Password: {HasPassword}
         # description += description_end.format(server_info["Region"].upper(), **server_info)
 
         server_info["Region"] = server_info["Region"].upper()
+        if str(server_info['Id']) in self.public_namespace.uptime:
+            seen, total = self.public_namespace.uptime[str(server_info['Id'])][self.public_namespace.SEEN_TIMES], self.public_namespace.uptime[str(server_info['Id'])][self.public_namespace.TOTAL_TIMES]
+            server_info["Uptime"] = (seen/total)
+        else:
+            server_info["Uptime"] = 1
 
         # Connection info
         field_val1='''Players: `{CurrentPlayers}/{MaxPlayers}`
+Uptime: `{Uptime:.0%}`
 Ping: {Ping}ms
 Region: {Region}
 '''
