@@ -18,7 +18,7 @@ class Plugin(plugin.OnReadyPlugin):
 ```@Idea add cardlife server status ```
 
 For more information, do
-```@Idea help cardlife_add_server_status``` '''
+```@Idea help claddstatus``` '''
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # constants

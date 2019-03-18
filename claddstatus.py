@@ -2,7 +2,7 @@ from libs import command, embed
 import re, discord
 
 class Command(command.DirectOnlyCommand):
-    '''Add server status message to be populated by `cardlife_server_status`
+    '''Add server status message to be populated by `clstatus`
 
 **Usage**
 ```@Idea add cardlife server status ```

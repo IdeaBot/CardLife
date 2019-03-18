@@ -7,11 +7,11 @@ IdeaBot add-ons package for CardLife server information
 This outlines the functionality of each command.
 Use `@Idea help <command name>` to get usage instructions.
 
-* cardlife_add_server_status
+* claddstatus
 > Get a CardLife Servers status message in a channel.
 
-* cardlife_server_info
+* clinfo
 > Get in-depth information on a specific CardLife server.
 
-* cardlife_server_status
+* clstatus
 > Display and update all CardLife Servers status messages
