@@ -104,12 +104,26 @@ For more information, do
             footer['text'] = '(Unofficial) CardLife API'
             footer['icon_url'] = None
             em = embed.create_embed(description=description, footer=footer, colour=0xddae60, title=title)
+            deleted_messages = list()
+            # update status messages
             for msg in self.public_namespace.messages:
                 message = discord.Object(id=msg)
                 message.channel = discord.Object(id=self.public_namespace.messages[msg])
-                await self.edit_message(message, new_content=' ', embed=em)
+                try:
+                    await self.edit_message(message, new_content=' ', embed=em)
+                except discord.NotFound:
+                    deleted_messages.append(msg)  # catch deleted/inaccessible messages
+                except:
+                    # don't stop other updates due to one error
+                    pass
+            # remove deleted messages
+            for msg in deleted_messages:
+                del(self.public_namespace.messages[msg])
+            # save modified files
             self.official_servers_data.content=self.official_servers
             self.official_servers_data.save()
+            self.public_namespace.messages_file.content=self.public_namespace.messages
+            self.public_namespace.messages_file.save()
         except:
             traceback.print_exc()
             pass
